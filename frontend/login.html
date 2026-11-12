@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <link rel="stylesheet" href="login.style.css">
+</head>
+<body>
+  <div class="background-animation"></div>
+  <div class="login-card">
+    <h2>Welcome Back 👋</h2>
+    <form id="loginForm">
+      <div class="input-group">
+        <input type="email" id="email" required>
+        <label>Email</label>
+      </div>
+      <div class="input-group">
+        <input type="password" id="password" required>
+        <label>Password</label>
+      </div>
+      <button class="login-btn" type="submit">Login</button>
+      <p class="signup-text">Don't have an account? <a href="signup.html">Sign up</a></p>
+      <p class="helper" id="message"></p>
+    </form>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const message = document.getElementById('message');
+      try {
+        const data = await apiRequest('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({
+            email: document.getElementById('email').value.trim(),
+            password: document.getElementById('password').value
+          })
+        });
+        setSession(data.user);
+        message.textContent = 'Login successful.';
+        window.location.href = 'dashboard.html';
+      } catch (error) {
+        message.textContent = error.message;
+      }
+    });
+  </script>
+</body>
+</html>

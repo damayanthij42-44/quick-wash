@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Tracking</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <div class="brand">QuickWash</div>
+    <div class="links">
+      <span>Tracking for <strong data-user-name>User</strong></span>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="product.html">Services</a>
+      <button class="link-btn" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="card">
+      <h2>Track Your Laundry Order</h2>
+      <p class="muted" style="margin:10px 0 16px;">
+        This page first checks the logged-in customer, then finds that customer's orders and current location updates.
+      </p>
+      <input id="customerName" placeholder="Customer name" readonly>
+      <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:6px;">
+        <button onclick="loadOrders()">Find My Orders</button>
+        <button onclick="window.location.href='product.html'">Create New Order</button>
+      </div>
+      <div id="orders"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    const notifiedOrders = new Set();
+    let poller = null;
+
+    function mapLink(order) {
+      const coords = order.tracking.coords;
+      return `https://www.google.com/maps?q=${coords.lat},${coords.lng}`;
+    }
+
+    function requestNotificationPermission() {
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
+
+    function notifyReady(order) {
+      if (notifiedOrders.has(order.id) || !order.tracking.isReady) return;
+      notifiedOrders.add(order.id);
+
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('QuickWash Update', {
+          body: `Order ${order.id} is ready for handover.`
+        });
+      }
+    }
+
+    function renderOrders(orders) {
+      const container = document.getElementById('orders');
+      container.innerHTML = '';
+
+      if (!orders.length) {
+        container.innerHTML = '<p style="margin-top:16px;">No orders found for this customer.</p>';
+        return;
+      }
+
+      orders.forEach((order) => {
+        notifyReady(order);
+        const stageHtml = order.tracking.stages.map((stage, index) => {
+          const active = index <= order.tracking.stageIndex ? 'style="color:#98ff98;"' : 'style="color:#d8e7f5;"';
+          return `<li ${active}>${index + 1}. ${stage.label}</li>`;
+        }).join('');
+
+        container.innerHTML += `
+          <div class="order-card">
+            <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+              <div>
+                <h3>${order.id}</h3>
+                <p class="muted">Customer: ${order.customer}</p>
+                <p class="muted">Pickup Date: ${order.pickupDate}</p>
+              </div>
+              <div class="badge">₹${order.totalAmount}</div>
+            </div>
+
+            <p style="margin-top:12px;"><strong>Current Status:</strong> ${order.tracking.label}</p>
+            <div class="progress"><div class="progress-bar" style="width:${order.tracking.progress}%"></div></div>
+            <p><strong>Current Location:</strong> ${order.tracking.locationText}</p>
+            <p><strong>Address:</strong> ${order.address}</p>
+            <p style="margin-top:8px;"><strong>Services:</strong> ${order.items.map(item => `${item.name} x${item.qty}`).join(', ')}</p>
+            ${order.tracking.isReady ? '<p class="success" style="margin-top:10px;">✅ Laundry ready for handover / delivered.</p>' : ''}
+            <div style="margin-top:14px; display:flex; gap:12px; flex-wrap:wrap;">
+              <a class="btn" href="${mapLink(order)}" target="_blank">Open Live Location</a>
+            </div>
+            <ul style="margin-top:14px; line-height:1.9;">${stageHtml}</ul>
+          </div>`;
+      });
+    }
+
+    async function loadOrders() {
+      try {
+        const customer = document.getElementById('customerName').value.trim();
+        const data = await apiRequest(`/orders/search?customer=${encodeURIComponent(customer)}`);
+        renderOrders(data.orders);
+      } catch (error) {
+        document.getElementById('orders').innerHTML = `<p style="margin-top:16px;">${error.message}</p>`;
+      }
+    }
+
+    async function initPage() {
+      const user = requireAuth();
+      if (!user) return;
+      updateNavUser();
+      requestNotificationPermission();
+      document.getElementById('customerName').value = user.name;
+      await loadOrders();
+      poller = setInterval(loadOrders, 15000);
+    }
+
+    window.addEventListener('beforeunload', () => {
+      if (poller) clearInterval(poller);
+    });
+
+    initPage();
+  </script>
+</body>
+</html>

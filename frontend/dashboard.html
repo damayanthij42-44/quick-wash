@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <div class="brand">QuickWash</div>
+    <div class="links">
+      <span>Hi, <strong data-user-name>User</strong></span>
+      <a href="product.html">Services</a>
+      <a href="orderTracking.html">Order Tracking</a>
+      <a href="contact.html">Contact</a>
+      <button class="link-btn" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="card" style="text-align:center;">
+      <h1>Dashboard</h1>
+      <p class="muted" style="margin-top:10px;">Manage orders, payment, and live tracking from one place.</p>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Book Laundry Services</h3>
+        <p class="muted" style="margin:10px 0 18px;">Choose washing, ironing, and dry cleaning services.</p>
+        <a class="btn" href="product.html">Open Services</a>
+      </div>
+      <div class="card">
+        <h3>Track Existing Orders</h3>
+        <p class="muted" style="margin:10px 0 18px;">Track by logged-in customer and view live location text updates.</p>
+        <a class="btn" href="orderTracking.html">Track Order</a>
+      </div>
+      <div class="card">
+        <h3>Customer Support</h3>
+        <p class="muted" style="margin:10px 0 18px;">Send a support request or contact the QuickWash team.</p>
+        <a class="btn" href="contact.html">Contact Us</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    requireAuth();
+    updateNavUser();
+  </script>
+</body>
+</html>

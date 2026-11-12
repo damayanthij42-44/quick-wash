@@ -1,0 +1,52 @@
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+body {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at top, #697f9f, #020617);
+  overflow: hidden;
+}
+.background-animation::before,
+.background-animation::after {
+  content: '';
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  animation: float 10s infinite alternate ease-in-out;
+}
+.background-animation::before { top: -100px; left: -100px; }
+.background-animation::after { bottom: -100px; right: -100px; animation-delay: 3s; }
+@keyframes float { from { transform: translateY(0px); } to { transform: translateY(40px); } }
+.login-card {
+  width: 390px;
+  padding: 36px;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(15px);
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  color: white;
+}
+.login-card h2 { text-align: center; margin-bottom: 28px; }
+.input-group { position: relative; margin-bottom: 24px; }
+.input-group input {
+  width: 100%; padding: 12px 10px; border: none; border-radius: 8px; outline: none;
+}
+.input-group label {
+  position: absolute; left: 12px; top: 12px; color: #555; transition: 0.3s; pointer-events: none;
+}
+.input-group input:focus + label,
+.input-group input:valid + label {
+  top: -10px; left: 8px; font-size: 12px; color: white;
+}
+.login-btn {
+  width: 100%; padding: 12px; border: none; border-radius: 8px; background: #2f6fed; color: white;
+  font-weight: bold; cursor: pointer;
+}
+.login-btn:hover { background: #1c4ec9; }
+.signup-text { text-align: center; margin-top: 15px; color: white; }
+.signup-text a { color: #fff; font-weight: bold; text-decoration: none; }
+.helper { margin-top: 14px; font-size: 0.9rem; color: #d8e7f5; text-align: center; }

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Services</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <div class="brand">QuickWash</div>
+    <div class="links">
+      <span>Hi, <strong data-user-name>User</strong></span>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="orderTracking.html">Order Tracking</a>
+      <button class="link-btn" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="card">
+      <h2>Laundry Services</h2>
+      <input id="search" placeholder="Search Service" onkeyup="searchProduct()">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Service</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Total</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="productList"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🛒 Shopping Cart</h3>
+      <ul id="cartList"></ul>
+      <p style="margin-top:12px;">Total: ₹ <span id="totalPrice">0</span></p>
+
+      <div class="row" style="margin-top:16px;">
+        <div>
+          <label>Pickup Address</label>
+          <input id="address" placeholder="Enter pickup and delivery address">
+        </div>
+        <div>
+          <label>Pickup Date</label>
+          <input id="date" type="date">
+        </div>
+      </div>
+
+      <div style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap;">
+        <button onclick="confirmOrder()">Confirm Products</button>
+        <button onclick="checkout()">Checkout</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    requireAuth();
+    updateNavUser();
+
+    let services = [];
+    let cart = JSON.parse(localStorage.getItem('quickwashCart') || '[]');
+
+    async function loadServices() {
+      const data = await apiRequest('/services');
+      services = data.services;
+      displayProducts();
+      displayCart();
+    }
+
+    function displayProducts() {
+      const list = document.getElementById('productList');
+      list.innerHTML = '';
+      services.forEach((service, index) => {
+        list.innerHTML += `
+          <tr>
+            <td>${service.name}</td>
+            <td>₹${service.price}</td>
+            <td><input class="qty" type="number" id="qty${index}" value="1" min="1" oninput="updatePrice(${index})"></td>
+            <td><span id="total${index}">₹${service.price}</span></td>
+            <td><button onclick="addToCart(${index})">Add Cart</button></td>
+          </tr>`;
+      });
+    }
+
+    function updatePrice(index) {
+      const qty = Number(document.getElementById(`qty${index}`).value);
+      document.getElementById(`total${index}`).innerText = `₹${qty * services[index].price}`;
+    }
+
+    function addToCart(index) {
+      const qty = Number(document.getElementById(`qty${index}`).value);
+      const service = services[index];
+      cart.push({ serviceId: service.id, name: service.name, qty, total: service.price * qty });
+      localStorage.setItem('quickwashCart', JSON.stringify(cart));
+      displayCart();
+    }
+
+    function displayCart() {
+      const list = document.getElementById('cartList');
+      list.innerHTML = '';
+      let total = 0;
+      cart.forEach((item, i) => {
+        list.innerHTML += `<li style="margin-top:10px;">${item.name} (x${item.qty}) = ₹${item.total} <button style="margin-left:8px; padding:6px 12px;" onclick="removeCart(${i})">Remove</button></li>`;
+        total += item.total;
+      });
+      document.getElementById('totalPrice').innerText = total;
+    }
+
+    function removeCart(index) {
+      cart.splice(index, 1);
+      localStorage.setItem('quickwashCart', JSON.stringify(cart));
+      displayCart();
+    }
+
+    function searchProduct() {
+      const search = document.getElementById('search').value.toLowerCase();
+      document.querySelectorAll('#productList tr').forEach((row) => {
+        row.style.display = row.textContent.toLowerCase().includes(search) ? '' : 'none';
+      });
+    }
+
+    function confirmOrder() {
+      if (!cart.length) {
+        alert('Cart is empty');
+        return;
+      }
+      alert('Products confirmed. Proceed to checkout.');
+    }
+
+    function checkout() {
+      if (!cart.length) {
+        alert('Cart is empty');
+        return;
+      }
+      if (!document.getElementById('address').value.trim() || !document.getElementById('date').value) {
+        alert('Please enter address and pickup date');
+        return;
+      }
+      localStorage.setItem('quickwashCheckout', JSON.stringify({
+        address: document.getElementById('address').value.trim(),
+        pickupDate: document.getElementById('date').value,
+        total: document.getElementById('totalPrice').innerText
+      }));
+      window.location.href = 'payment.html';
+    }
+
+    loadServices().catch((error) => alert(error.message));
+  </script>
+</body>
+</html>

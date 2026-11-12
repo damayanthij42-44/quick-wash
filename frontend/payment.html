@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <div class="brand">QuickWash</div>
+    <div class="links">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="orderTracking.html">Order Tracking</a>
+      <button class="link-btn" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="container" style="max-width:560px;">
+    <div class="card">
+      <h2>Payment Options</h2>
+      <select id="paymentMethod" onchange="showPaymentFields()">
+        <option value="">Select Payment Method</option>
+        <option value="upi">UPI</option>
+        <option value="credit">Credit Card</option>
+        <option value="debit">Debit Card</option>
+        <option value="netbanking">Net Banking</option>
+        <option value="cash">Cash</option>
+      </select>
+
+      <div id="upiField" style="display:none;">
+        <input placeholder="Enter UPI ID" id="upiId">
+      </div>
+
+      <div id="cardField" style="display:none;">
+        <input placeholder="Card Number" id="cardNumber">
+        <input placeholder="Expiry Date (MM/YY)" id="cardExpiry">
+        <input placeholder="CVV" id="cardCvv">
+      </div>
+
+      <div id="bankField" style="display:none;">
+        <select id="bankName">
+          <option value="">Select Bank</option>
+          <option>SBI</option>
+          <option>HDFC</option>
+          <option>ICICI</option>
+          <option>Axis Bank</option>
+          <option>Kotak Bank</option>
+        </select>
+      </div>
+
+      <input id="amount" readonly>
+      <button onclick="makePayment()">Pay Now</button>
+      <p id="message" class="muted" style="margin-top:14px;"></p>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    requireAuth();
+    const cart = JSON.parse(localStorage.getItem('quickwashCart') || '[]');
+    const checkoutData = JSON.parse(localStorage.getItem('quickwashCheckout') || '{}');
+
+    function showPaymentFields() {
+      const method = document.getElementById('paymentMethod').value;
+      document.getElementById('upiField').style.display = method === 'upi' ? 'block' : 'none';
+      document.getElementById('cardField').style.display = ['credit', 'debit'].includes(method) ? 'block' : 'none';
+      document.getElementById('bankField').style.display = method === 'netbanking' ? 'block' : 'none';
+    }
+
+    async function makePayment() {
+      const message = document.getElementById('message');
+      const method = document.getElementById('paymentMethod').value;
+      if (!method) return alert('Select payment method');
+      if (!cart.length) return alert('Cart is empty');
+      if (!checkoutData.address || !checkoutData.pickupDate) return alert('Checkout information missing');
+
+      if (method === 'upi' && !document.getElementById('upiId').value.trim()) return alert('Enter UPI ID');
+      if (['credit', 'debit'].includes(method)) {
+        if (!document.getElementById('cardNumber').value.trim() || !document.getElementById('cardExpiry').value.trim() || !document.getElementById('cardCvv').value.trim()) {
+          return alert('Enter card details');
+        }
+      }
+      if (method === 'netbanking' && !document.getElementById('bankName').value) return alert('Select bank');
+
+      try {
+        const data = await apiRequest('/orders/checkout', {
+          method: 'POST',
+          body: JSON.stringify({
+            cart,
+            address: checkoutData.address,
+            pickupDate: checkoutData.pickupDate,
+            paymentMethod: method
+          })
+        });
+
+        message.textContent = `${data.message} Order ID: ${data.order.id}`;
+        localStorage.removeItem('quickwashCart');
+        localStorage.removeItem('quickwashCheckout');
+        setTimeout(() => {
+          window.location.href = 'orderTracking.html';
+        }, 1200);
+      } catch (error) {
+        message.textContent = error.message;
+      }
+    }
+
+    window.onload = function () {
+      document.getElementById('amount').value = checkoutData.total ? `Amount: ₹${checkoutData.total}` : 'Amount: ₹0';
+    };
+  </script>
+</body>
+</html>
